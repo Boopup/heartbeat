@@ -1,4 +1,5 @@
-import os, time, re, requests, signal, sys
+import os, time, re, signal, sys
+from urllib.request import urlopen, Request
 
 url = os.getenv("HEARTBEAT_URL").rstrip("/")
 interval = os.getenv("INTERVAL", "5m")
@@ -13,9 +14,11 @@ fail = False
 
 def send(f=False):
     try:
-        requests.get(url + ("/fail" if f else ""), timeout=10)
+        req = Request(url + ("/fail" if f else ""))
+        urlopen(req, timeout=10).read()
+        print("sent:", "fail" if f else "ok")
     except:
-        pass
+        print("send failed")
 
 def stop(*_):
     send(True)
@@ -23,6 +26,9 @@ def stop(*_):
 
 signal.signal(signal.SIGINT, stop)
 signal.signal(signal.SIGTERM, stop)
+
+print("heartbeat started")
+print("interval:", interval)
 
 while True:
     send(fail)
